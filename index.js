@@ -6,10 +6,11 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const FileStore = require('session-file-store')(session);
 const csrf = require('csurf');
-const bodyParser = require('body-parser'); // needed to extract information from Stripe sends a request to our webhook
+const cors = require('cors');
 
 // Create an express application
 let app = express(); 
+
 
 // set the view engine
 app.set('view engine', 'hbs');
@@ -27,6 +28,9 @@ app.use(express.urlencoded({
     extended: false
 }))
 
+// Cors must be enabled before session
+app.use(cors())
+
 // setup sessions
 app.use(session({
     'store': new FileStore(),
@@ -34,6 +38,8 @@ app.use(session({
     'resave': false,
     'saveUninitialized': true
 }))
+
+
 
 // setup flash
 app.use(flash())
@@ -78,6 +84,8 @@ app.use(function(req,res,next){
             // if no middleware left
 })
 
+app.options('*', cors()) // include before other routes
+
 const landingRoutes = require('./routes/landing')
 const productRoutes = require('./routes/products')
 const userRoutes = require('./routes/users')
@@ -99,8 +107,8 @@ async function main() {
     app.use('/cloudinary', cloudinaryRoutes);
     app.use('/cart', cartRoutes);
     app.use('/checkout', checkoutRoutes);
-    app.use('/api/products', express.json(), api.products);
-    app.use('/api/users', express.json(), api.users);
+    app.use('/api/products', [express.json()], api.products);
+    app.use('/api/users', [express.json()], api.users);
 }
 
 main();
